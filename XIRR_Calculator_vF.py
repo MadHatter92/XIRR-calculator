@@ -3,6 +3,7 @@
 #Need to add
 
 import streamlit as st
+import streamlit_analytics
 import pandas as pd
 from datetime import date
 from datetime import datetime
@@ -43,6 +44,7 @@ with st.form("xirr_form"):
 
 	submitted = st.form_submit_button("Calculate")
 
+	streamlit_analytics.start_tracking()
 	if submitted:
 		if uploaded_file is not None:
 			if current_NAV > 0:
@@ -53,7 +55,7 @@ with st.form("xirr_form"):
 					st.error("Something went wrong, please check the values entered")
 			else: st.error("Please enter current portfolio value")
 		else: st.error("Please upload broker statement as shown in Instructions")
-
+	streamlit_analytics.stop_tracking()
 
 st.subheader('How to Use:', anchor=None)
 # st.image('https://i.postimg.cc/bY1KVM11/Screenshot-2021-12-12-at-10-15-19-ICICI-Direct.png', caption='Log in to your ICICI Direct Account', width=None, use_column_width=None, clamp=False, channels="RGB", output_format="auto")
@@ -64,3 +66,4 @@ st.text("4. Click on \"Download\", with the \"All Transactions: CSV\" option")
 st.text("5. Upload the CSV file here")
 st.text("6. Enter current portfolio value to calculate XIRR")
 
+st.write("[Created by MadHatter92](https://github.com/MadHatter92)")

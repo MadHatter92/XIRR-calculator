@@ -1,3 +1,4 @@
 pandas
 datetime
 pyxirr
+streamlit_analytics
