@@ -1,6 +1,4 @@
-#Works with Streamlit and is run on a local server
-#Currently only operates with ICICI Direct Brokerage Statement
-#Need to add
+#Works with Streamlit and hosted on Streamlit cloud
 
 import streamlit as st
 import streamlit_analytics
@@ -11,9 +9,14 @@ from pyxirr import xirr
 import pandas as pd
 
 st.title('XIRR Calculator', anchor=None)
-st.text("(Currently only works for ICICI Direct brokerage statement)")
 
 with st.form("xirr_form"):
+
+	option = st.selectbox(
+	     'Select your broker',
+	     ('ICICI Direct', 'Zerodha'))
+
+	#TBD: Calculate for Zerodha, the time field will need a bit of manipulation
     
 	uploaded_file = st.file_uploader("Upload CSV statement", type=['csv'], accept_multiple_files=False, key=None, help=None, on_change=None, args=None, kwargs=None)
 
@@ -26,16 +29,36 @@ with st.form("xirr_form"):
 		amount = []
 		date = []
 
+		if option == 'ICICI Direct':
+			action = 'Action'
+			buy = 'Buy'
+			sell = 'Sell'
+			price = 'Transaction Price'
+			quantity = 'Quantity'
+			transaction_date = 'Transaction Date'
+
+		elif option == 'Zerodha':
+			action = 'trade_type'
+			buy = 'buy'
+			sell = 'sell'
+			price = 'price'
+			quantity = 'quantity'
+			transaction_date = 'trade_date'
+			
 		# Calculate amount of Transaction
 		# If buy transaction, add negative against amount
 
 		for index, row in df.iterrows():
-		    if row['Action'] == 'Buy':
+		    if row[action] == buy:
 		        sign = -1
 		    else:
 		        sign = 1
-		    amount.append(row['Transaction Price']*row['Quantity']*sign)
-		    date.append(datetime.strptime(row['Transaction Date'], '%d-%b-%Y').date())
+		    amount.append(row[price]*row[quantity]*sign)
+		    if option == 'ICICI Direct':
+			    date.append(datetime.strptime(row[transaction_date],'%d-%b-%Y').date())
+		    elif option == 'Zerodha':
+			    date.append(datetime.strptime(row[transaction_date],'%d-%m-%Y').date())
+	
 
 		# Add last data points as current date and NAV as of current date
 		# Calculate XIRR
@@ -59,10 +82,8 @@ with st.form("xirr_form"):
 
 st.subheader('How to Use:', anchor=None)
 # st.image('https://i.postimg.cc/bY1KVM11/Screenshot-2021-12-12-at-10-15-19-ICICI-Direct.png', caption='Log in to your ICICI Direct Account', width=None, use_column_width=None, clamp=False, channels="RGB", output_format="auto")
-st.text("1. Log into your ICICI Direct Account")
-st.text("2. Go to \"Portfolio\" tab under the \"Equity\" tab")
-st.text("3. Select Holding Duration as \"All\" and click on \"View\"")
-st.text("4. Click on \"Download\", with the \"All Transactions: CSV\" option")
+st.text("1. Log into your broker account")
+st.text("4. Download the brokerage statement showing all buy and sell transactions")
 st.text("5. Upload the CSV file here")
 st.text("6. Enter current portfolio value to calculate XIRR")
 
