@@ -28,6 +28,7 @@ with st.form("xirr_form"):
 
 		amount = []
 		date = []
+		portfolio = []
 
 		if option == 'ICICI Direct':
 			action = 'Action'
@@ -53,12 +54,28 @@ with st.form("xirr_form"):
 		        sign = -1
 		    else:
 		        sign = 1
-		    amount.append(row[price]*row[quantity]*sign)
+		    value = row[price]*row[quantity]*sign
+		    amount.append(value)
 		    if option == 'ICICI Direct':
 			    date.append(datetime.strptime(row[transaction_date],'%d-%b-%Y').date())
 		    elif option == 'Zerodha':
 			    date.append(datetime.strptime(row[transaction_date],'%d-%m-%Y').date())
-	
+		
+
+		df = pd.DataFrame(zip(date, amount), columns =['Date', 'Amount']).sort_values(by="Date")
+
+		#An elegant way to aggregate amounts by date
+		df = df.groupby(['Date']).sum()
+		aggregated_amount_list = df['Amount'].tolist()
+
+		# #Calculation of net portfolio value on each date by summing buys and subtracting sells
+		for item in aggregated_amount_list:
+			if portfolio == []:
+				portfolio.append(-1*item)
+			else:
+				portfolio.append(portfolio[-1]+(-1*item))
+		
+		df['Book Value of Portfolio'] = portfolio
 
 		# Add last data points as current date and NAV as of current date
 		# Calculate XIRR
@@ -70,6 +87,7 @@ with st.form("xirr_form"):
 	streamlit_analytics.start_tracking()
 	if submitted:
 		if uploaded_file is not None:
+
 			if current_NAV > 0:
 				try: 
 					xirr = round(xirr(date+[datetime.today()], amount+[current_NAV])*100,2)
@@ -78,6 +96,15 @@ with st.form("xirr_form"):
 					st.error("Something went wrong, please check the values entered")
 			else: st.error("Please enter current portfolio value")
 		else: st.error("Please upload broker statement as shown in Instructions")
+		
+		#Charts need a little more polish
+
+		# st.metric(label='Book value of portfolio', value="", delta=None, delta_color="normal")
+		# st.area_chart(df.drop(['Amount'], axis=1))
+		
+		st.metric(label='Buy/Sell History', value="", delta=None, delta_color="normal")
+		st.bar_chart(df.drop(['Book Value of Portfolio'], axis=1))
+	
 	streamlit_analytics.stop_tracking()
 
 st.subheader('How to Use:', anchor=None)
